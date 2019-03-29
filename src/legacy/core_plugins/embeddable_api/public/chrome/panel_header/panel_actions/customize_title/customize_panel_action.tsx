@@ -20,6 +20,7 @@
 import { Action, Container, Embeddable } from '../../../../';
 
 import { EuiIcon } from '@elastic/eui';
+import { ViewMode } from 'plugins/embeddable_api/types';
 import React from 'react';
 import { openFlyout } from 'ui/flyout';
 import { CustomizePanelFlyout } from './customize_panel_flyout';
@@ -44,6 +45,18 @@ export class CustomizePanelTitleAction extends Action {
 
   public getIcon() {
     return <EuiIcon type="pencil" />;
+  }
+
+  public isCompatible({
+    embeddable,
+    container,
+  }: {
+    embeddable: Embeddable;
+    container?: Container;
+  }) {
+    return Promise.resolve(
+      container && container.getOutput().viewMode === ViewMode.EDIT ? true : false
+    );
   }
 
   public execute({ embeddable, container }: { embeddable: Embeddable; container: Container }) {

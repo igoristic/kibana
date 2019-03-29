@@ -16,19 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-export * from './actions';
-export * from './triggers';
-export { Container, ContainerInput, ContainerOutput, PanelState } from './containers';
-export {
-  EmbeddableFactory,
-  EmbeddableFactoriesRegistryProvider,
-  EmbeddableInstanceConfiguration,
-  Embeddable,
-  embeddableFactories,
-  OutputSpec,
-  ErrorEmbeddable,
-  EmbeddableInput,
-  EmbeddableOutput,
-} from './embeddables';
-export * from './context_menu_actions';
-export { Query, Filters, Filter, TimeRange, RefreshConfig, ViewMode } from './types';
+import { Embeddable, EmbeddableInput } from 'plugins/embeddable_api/index';
+import React from 'react';
+import ReactDom from 'react-dom';
+import { HELLO_WORLD_EMBEDDABLE } from './hello_world_embeddable_factory';
+
+export class HelloWorldEmbeddable extends Embeddable {
+  constructor(initialInput: EmbeddableInput) {
+    super(HELLO_WORLD_EMBEDDABLE, initialInput, { title: 'Hello World!' });
+  }
+
+  public render(node: HTMLElement) {
+    ReactDom.render(<div>Hello World!</div>, node);
+  }
+}

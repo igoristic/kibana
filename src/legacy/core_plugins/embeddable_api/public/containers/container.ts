@@ -17,15 +17,24 @@
  * under the License.
  */
 
-import { Embeddable, EmbeddableInput, EmbeddableOutput } from '../embeddables';
+import { Embeddable, embeddableFactories, EmbeddableInput, EmbeddableOutput } from '../embeddables';
 import { ViewMode } from '../types';
+
+import uuid from 'uuid';
+
+export interface PanelState {
+  embeddableId: string;
+  // The type of embeddable in this panel. Will be used to find the factory in which to
+  // load the embeddable.
+  type: string;
+  customization?: { [key: string]: any };
+  initialInput: any;
+}
 
 export interface ContainerInput extends EmbeddableInput {
   hidePanelTitles?: boolean;
   panels: {
-    [key: string]: {
-      customization: { [key: string]: any };
-    };
+    [key: string]: PanelState;
   };
 }
 
@@ -33,24 +42,22 @@ export interface ContainerOutput extends EmbeddableOutput {
   hidePanelTitles?: boolean;
   viewMode: ViewMode;
   panels: {
-    [key: string]: {
-      customization: { [key: string]: any };
-    };
+    [key: string]: PanelState;
   };
+  embeddableLoaded: { [key: string]: boolean };
 }
 
-export abstract class Container<
+export class Container<
   I extends ContainerInput = ContainerInput,
-  O extends ContainerOutput = ContainerOutput,
-  EI extends EmbeddableInput = EmbeddableInput
+  O extends ContainerOutput = ContainerOutput
 > extends Embeddable<I, O> {
-  protected readonly embeddables: { [key: string]: Embeddable<EI, EmbeddableOutput> } = {};
+  protected readonly embeddables: { [key: string]: Embeddable } = {};
   private embeddableUnsubscribes: { [key: string]: () => void } = {};
 
-  constructor(config: { type: string; id?: string }, input: I, output: O) {
-    super(config, input, output);
+  constructor(type: string, input: I, output: O) {
+    super(type, input, output);
 
-    this.subscribeToInputChanges(() => this.setEmbeddablesInput());
+    this.initializeEmbeddables();
   }
 
   public getEmbeddableCustomization(embeddableId: string) {
@@ -65,8 +72,104 @@ export abstract class Container<
     return this.input.hidePanelTitles ? this.input.hidePanelTitles : false;
   }
 
-  public addEmbeddable(embeddable: Embeddable<EI, EmbeddableOutput>) {
+  public updatePanelState(panelState: PanelState) {
+    this.setInput({
+      ...this.input,
+      panels: {
+        ...this.input.panels,
+        [panelState.embeddableId]: {
+          ...this.input.panels[panelState.embeddableId],
+          ...panelState,
+        },
+      },
+    });
+  }
+
+  public async loadEmbeddable(panelState: PanelState) {
+    const factory = embeddableFactories.getFactoryByName(panelState.type);
+    const embeddable = await factory.create(this.getInputForEmbeddable(panelState));
+    this.subscribeToEmbeddableCustomizations(embeddable);
     embeddable.setContainer(this);
+    this.embeddables[embeddable.id] = embeddable;
+    this.updatePanelState(panelState);
+
+    this.emitOutputChanged({
+      ...this.output,
+      embeddableLoaded: {
+        [panelState.embeddableId]: true,
+      },
+    });
+  }
+
+  public async addNewEmbeddable(type: string) {
+    const factory = embeddableFactories.getFactoryByName(type);
+    const panelState = this.createNewPanelState(type);
+    const embeddable = await factory.create(this.getInputForEmbeddable(panelState));
+    this.subscribeToEmbeddableCustomizations(embeddable);
+    embeddable.setContainer(this);
+    this.embeddables[embeddable.id] = embeddable;
+    this.updatePanelState(panelState);
+
+    this.emitOutputChanged({
+      ...this.output,
+      embeddableLoaded: {
+        [panelState.embeddableId]: true,
+      },
+    });
+    return embeddable;
+  }
+
+  public addExistingEmbeddable(embeddable: Embeddable) {
+    const panelState = this.createNewPanelState(embeddable.type, embeddable.id);
+    this.subscribeToEmbeddableCustomizations(embeddable);
+    embeddable.setContainer(this);
+    this.embeddables[embeddable.id] = embeddable;
+    this.updatePanelState(panelState);
+
+    this.emitOutputChanged({
+      ...this.output,
+      embeddableLoaded: {
+        [panelState.embeddableId]: true,
+      },
+    });
+  }
+
+  public createNewPanelState(type: string, id?: string): PanelState {
+    const embeddableId = id || uuid.v4();
+    return {
+      type,
+      embeddableId,
+      customization: {},
+      initialInput: {},
+    };
+  }
+
+  public removeEmbeddable(embeddable: Embeddable) {
+    this.embeddables[embeddable.id].destroy();
+    delete this.embeddables[embeddable.id];
+
+    this.embeddableUnsubscribes[embeddable.id]();
+
+    const changedInput = _.cloneDeep(this.input);
+    delete changedInput.panels[embeddable.id];
+    this.setInput(changedInput);
+  }
+
+  public getInputForEmbeddable(panelState: PanelState): EmbeddableInput {
+    return {
+      id: panelState.embeddableId,
+      customization: {
+        ...panelState.customization,
+      },
+      ...panelState.initialInput,
+    };
+  }
+
+  public getEmbeddable(id: string) {
+    return this.embeddables[id];
+  }
+
+  private subscribeToEmbeddableCustomizations(embeddable: Embeddable) {
     this.embeddableUnsubscribes[embeddable.id] = embeddable.subscribeToOutputChanges(
       (output: EmbeddableOutput) => {
         this.setInput({
@@ -84,31 +187,18 @@ export abstract class Container<
         });
       }
     );
-
-    this.embeddables[embeddable.id] = embeddable;
-    embeddable.setInput(this.getInputForEmbeddable(embeddable.id));
   }
 
-  public removeEmbeddable(embeddable: Embeddable<EI, EmbeddableOutput>) {
-    this.embeddables[embeddable.id].destroy();
-    delete this.embeddables[embeddable.id];
+  private async initializeEmbeddables() {
+    const promises = Object.values(this.input.panels).map(panel => this.loadEmbeddable(panel));
+    await Promise.all(promises);
 
-    this.embeddableUnsubscribes[embeddable.id]();
-
-    const changedInput = _.cloneDeep(this.input);
-    delete changedInput.panels[embeddable.id];
-    this.setInput(changedInput);
-  }
-
-  public abstract getInputForEmbeddable(embeddableId: string): EI;
-
-  public getEmbeddable(id: string) {
-    return this.embeddables[id];
+    this.subscribeToInputChanges(() => this.setEmbeddablesInput());
   }
 
   private setEmbeddablesInput() {
     Object.values(this.embeddables).forEach((embeddable: Embeddable) => {
-      embeddable.setInput(this.getInputForEmbeddable(embeddable.id));
+      embeddable.setInput(this.getInputForEmbeddable(this.input.panels[embeddable.id]));
     });
   }
 }

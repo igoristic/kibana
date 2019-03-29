@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 import {
   Container,
   ContainerInput,
@@ -31,10 +30,12 @@ import {
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { TimeRange } from 'ui/timefilter/time_history';
+import uuid from 'uuid';
 
 import { I18nProvider } from '@kbn/i18n/react';
 import { DASHBOARD_CONTAINER_TYPE } from './dashboard_container_factory';
-import { PanelStateMap } from './types';
+import { createPanelState } from './panel';
+import { DashboardPanelState, PanelStateMap } from './types';
 // @ts-ignore
 import { DashboardViewport } from './viewport/dashboard_viewport';
 
@@ -75,17 +76,20 @@ export type DashboardEmbeddable = Embeddable<DashboardEmbeddableInput, Dashboard
 
 export class DashboardContainer extends Container<
   DashboardContainerInput,
-  DashboardContainerOutput,
-  DashboardEmbeddableInput
+  DashboardContainerOutput
 > {
   constructor(
-    { id }: { id: string },
     initialInput: DashboardContainerInput,
     private getEmbeddableFactory: <I, O>(type: string) => EmbeddableFactory<I, O> | undefined
   ) {
-    super({ type: DASHBOARD_CONTAINER_TYPE, id }, initialInput, initialInput);
+    super(DASHBOARD_CONTAINER_TYPE, initialInput, initialInput);
 
     this.subscribeToInputChanges(input => this.emitOutputChanged(input));
+  }
+
+  public createNewPanelState(type: string, id?: string): DashboardPanelState {
+    const embeddableId = id || uuid.v4();
+    return createPanelState({ id: embeddableId }, type, Object.values(this.input.panels));
   }
 
   public onToggleExpandPanel(id: string) {
@@ -122,14 +126,8 @@ export class DashboardContainer extends Container<
     );
   }
 
-  public getInputForEmbeddable(embeddableId: string): DashboardEmbeddableInput {
-    const panel = Object.values(this.input.panels).find(
-      panelToFind => panelToFind.embeddableId === embeddableId
-    );
-    if (!panel) {
-      throw new Error('No panel at id ' + embeddableId);
-    }
-    const isPanelExpanded = this.input.expandedPanelId === embeddableId;
+  public getInputForEmbeddable(panelState: DashboardPanelState): DashboardEmbeddableInput {
+    const isPanelExpanded = this.input.expandedPanelId === panelState.embeddableId;
     const { viewMode, refreshConfig, timeRange, query, hidePanelTitles, filters } = this.output;
     return {
       filters,
@@ -139,10 +137,9 @@ export class DashboardContainer extends Container<
       timeRange,
       refreshConfig,
       viewMode,
-      ...panel.embeddableInput,
-      customization: panel.customization,
+      ...panelState.initialInput,
+      customization: panelState.customization,
+      id: panelState.embeddableId,
     };
   }
 }
-
-console.log('in dashboard container: all done');

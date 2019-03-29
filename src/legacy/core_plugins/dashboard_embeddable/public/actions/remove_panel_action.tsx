@@ -52,6 +52,7 @@ export class RemovePanelAction extends Action {
     container: DashboardContainer;
   }) {
     return Promise.resolve(
+      container &&
       container.type === DASHBOARD_CONTAINER_TYPE &&
         container.getOutput().viewMode === ViewMode.EDIT &&
         container.getOutput().expandedPanelId !== embeddable.id

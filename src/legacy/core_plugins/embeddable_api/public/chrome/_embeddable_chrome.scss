@@ -18,7 +18,6 @@ $dshEditingModeHoverColor: transparentize($euiColorWarning, lightOrDarkTheme(.9,
   .panel-content {
     display: flex;
     flex: 1 1 100%;
-    height: auto;
     min-height: 0; // Absolute must for Firefox to scroll contents
   }
 

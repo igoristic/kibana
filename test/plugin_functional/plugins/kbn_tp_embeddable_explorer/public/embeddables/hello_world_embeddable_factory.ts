@@ -16,19 +16,32 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-export * from './actions';
-export * from './triggers';
-export { Container, ContainerInput, ContainerOutput, PanelState } from './containers';
-export {
-  EmbeddableFactory,
-  EmbeddableFactoriesRegistryProvider,
-  EmbeddableInstanceConfiguration,
-  Embeddable,
+
+import 'ui/doc_table';
+
+import {
   embeddableFactories,
-  OutputSpec,
-  ErrorEmbeddable,
+  EmbeddableFactory,
   EmbeddableInput,
-  EmbeddableOutput,
-} from './embeddables';
-export * from './context_menu_actions';
-export { Query, Filters, Filter, TimeRange, RefreshConfig, ViewMode } from './types';
+} from 'plugins/embeddable_api/index';
+import { HelloWorldEmbeddable } from './hello_world_embeddable';
+
+export const HELLO_WORLD_EMBEDDABLE = 'hello_world';
+
+export class HelloWorldEmbeddableFactory extends EmbeddableFactory {
+  constructor() {
+    super({
+      name: HELLO_WORLD_EMBEDDABLE,
+    });
+  }
+
+  public getOutputSpec() {
+    return {};
+  }
+
+  public create(initialInput: EmbeddableInput) {
+    return Promise.resolve(new HelloWorldEmbeddable(initialInput));
+  }
+}
+
+embeddableFactories.registerFactory(new HelloWorldEmbeddableFactory());

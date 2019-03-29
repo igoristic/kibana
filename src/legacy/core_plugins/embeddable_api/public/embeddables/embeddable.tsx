@@ -26,44 +26,41 @@ import { Container, ContainerInput, ContainerOutput } from '../containers';
 import { Trigger } from '../triggers';
 import { OutputSpec, ViewMode } from '../types';
 
-interface EmbeddableConfiguration {
-  id?: string;
-  type: string;
-}
-
 export interface EmbeddableInput {
   viewMode?: ViewMode;
   title?: string;
-  customization: { [key: string]: any };
+  id?: string;
+  customization?: { [key: string]: any };
+  savedObjectId?: string;
 }
 
 export interface EmbeddableOutput {
   editUrl?: string;
   title?: string;
-  customization: { [key: string]: any };
+  customization?: { [key: string]: any };
 }
 
-export abstract class Embeddable<
+export class Embeddable<
   I extends EmbeddableInput = EmbeddableInput,
   O extends EmbeddableOutput = EmbeddableOutput
 > {
   public readonly type: string;
   public readonly id: string;
-  public container?: Container<ContainerInput, ContainerOutput, I>;
+  public container?: Container;
   protected inputChangeListeners: Array<(<F extends I>(input: F) => void)> = [];
   protected outputChangeListeners: Array<(<F extends O>(output: F) => void)> = [];
   protected output: O;
   protected input: I;
   private chromeContainer?: Element;
 
-  constructor({ type, id }: EmbeddableConfiguration, input: I, output: O) {
+  constructor(type: string, input: I, output: O) {
     this.type = type;
-    this.id = id || uuid();
+    this.id = input.id || uuid();
     this.output = output;
     this.input = input;
   }
 
-  public setContainer(container: Container<ContainerInput, ContainerOutput, I>) {
+  public setContainer(container: Container) {
     this.container = container;
   }
 
@@ -114,9 +111,6 @@ export abstract class Embeddable<
     this.destroy();
 
     this.chromeContainer = domNode;
-    if (!this.container) {
-      throw new Error("Embeddable chrome can't be used without a container object");
-    }
 
     ReactDOM.render(
       // @ts-ignore
@@ -127,7 +121,9 @@ export abstract class Embeddable<
     );
   }
 
-  public abstract render(domNode: HTMLElement | ReactNode): void;
+  public render(domNode: HTMLElement | ReactNode): void {
+    return;
+  }
 
   /**
    * An embeddable can return inspector adapters if it want the inspector to be
