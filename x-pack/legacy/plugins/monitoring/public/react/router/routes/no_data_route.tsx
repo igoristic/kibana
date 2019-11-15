@@ -49,13 +49,7 @@ class NoDataView extends MonitoringViewBase {
 
     this.context.setTitle(title);
     this.context.enableTimeFilter(false);
-
-    //let { setTitle } = this.context.setTitle;
-    //setTitle('from base ...');
-
   }
-
-
 
   private fakeProps = {
     errors: [],
@@ -68,36 +62,26 @@ class NoDataView extends MonitoringViewBase {
   };
 
 
-  //REMOVE / Replace
+  //TODO: replace with real
   private changePath = (_?: string) => void 0;
   private enableCollectionInterval = () => {
     console.log('enableCollectionInterval');
   }
   private enabler = { enableCollectionInterval: this.enableCollectionInterval };
-  //
 
   public render = () => {
     return (<NoData {...this.fakeProps} enabler={this.enabler} changePath={this.changePath} />)
   }
 }
 
-const CODE_PATH_LICENSE = ''; //remove
-
 //TODO: create a base class
 export class NoDataRoute {
 
   public static readonly path: string = '/no-data';
   public static readonly route = (<Route exact key={NoDataRoute.path} path={NoDataRoute.path} component={NoDataView} />);
-  public static readonly codePaths = [CODE_PATH_LICENSE];
 
   public static readonly navigate = (state?: any, replace?: boolean) => {
     const historyItem = { pathname: NoDataRoute.path, state };
     (replace) ? history.replace(historyItem) : history.push(historyItem);
-
-    //historyMethod()
-
-    //history.push()
-
-    //consider fetching cluster routeInit here and adding it to the state?
   }
 }

@@ -45,10 +45,6 @@ export class App extends React.Component<{}, State> {
     enableTimeFilter: true
   };
 
-  componentDidMount() {
-    //this.setTitle('Monitoring: Clustors');
-  }
-
   private dataAPIOptions: FetchDataOptions = DEFAULT_API_OPTIONS;
 
   private setTitle = (title: string) => {
@@ -69,12 +65,9 @@ export class App extends React.Component<{}, State> {
     if (!api || !api.trim().length) {
       throw Error(`FetchDataOptions.api in fetchDataInterval method is required`);
     }
-
     this.dataAPIOptions = options = { ...DEFAULT_API_OPTIONS, ...options };
 
     this.enableTimeFilter(true);
-
-
 
     /**
      * IF this.dataAPIOptions !== options:
@@ -111,23 +104,17 @@ export class App extends React.Component<{}, State> {
     //- Spread timeFilterSettings into this.dataAPIOptions
     //- fetchData() then fire withIntervalHandler(data) || catch
 
-    //console.log('...DATA:', range);
-
   }
 
   private reset = (): void => {
     this.dataAPIOptions = DEFAULT_API_OPTIONS;
   }
 
-
   render() {
     return (
       <EuiErrorBoundary>
         <I18nContext>
-
-
           <LocationProvider>
-
             <AppStateContext.Provider value={{
               state: this.state,
               setTitle: this.setTitle,
@@ -135,15 +122,10 @@ export class App extends React.Component<{}, State> {
               enableTimeFilter: this.enableTimeFilter,
               reset: this.reset
             }} >
-
               <Header {...{ onTimerTick: this.onTimerTick, title: this.state.title, disableDatePicker: !this.state.enableTimeFilter }} />
               <MonitoringRouter />
-
             </AppStateContext.Provider>
-
           </LocationProvider>
-
-
         </I18nContext>
       </EuiErrorBoundary>
     );

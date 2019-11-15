@@ -59,13 +59,10 @@ export class Header extends Component<Props, State> {
   };
 
   private currentTimefilterParams: TimefilterParams = {};
-
   private initialPromise: Promise<any> = Promise.resolve();
-
 
   shouldComponentUpdate(nextProps: Readonly<Props>) {
     if (nextProps.onTimerTick !== this.props.onTimerTick) {
-      console.log('Header > shouldComponentUpdate > tick method changed');
       this.initialPromise = this.onRefresh();
     }
     if (nextProps.disableDatePicker !== this.props.disableDatePicker) {
@@ -79,7 +76,6 @@ export class Header extends Component<Props, State> {
     const { timefilterParams, setTimefilterParams } = this.context;
     setTimefilterParams(timefilterParams);
     this.initialPromise = this.onRefresh();
-    console.log('Header > componentDidMount');
   }
 
   onTimeChange = ({ start, end }: TimeRange) => {
@@ -101,16 +97,7 @@ export class Header extends Component<Props, State> {
     }).then(() => {
       this.setLoading(false);
       return Promise.resolve();
-    })
-
-    /*return new Promise(resolve => {
-      setTimeout(() => {
-        this.props.onTimerTick && this.props.onTimerTick({ start, end });
-        resolve();
-      }, 100);
-    }).then(() => {
-      this.setLoading(false);
-    });*/
+    });
   };
 
   setLoading = (loading: boolean) => {
@@ -143,8 +130,6 @@ export class Header extends Component<Props, State> {
 
     const { timefilterParams } = this.context;
     this.currentTimefilterParams = { ...timefilterParams };
-
-    console.log('Header > render > context:', this.context);
 
     return (
       <EuiFlexItem style={{ minWidth: 300 }}>

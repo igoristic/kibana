@@ -25,7 +25,6 @@ export class MonitoringViewBase extends React.Component<{}, State> {
   }
 
   public componentDidMount() {
-    console.log(' .......... componentDidMount BASE');
     this.context.setTitle('');
   }
 
@@ -33,7 +32,7 @@ export class MonitoringViewBase extends React.Component<{}, State> {
     this.context.reset();
   }
 
-  public renderView = (): never | JSX.Element => {
+  public renderView = (): never | JSX.Element | React.ComponentType => {
     throw Error('MonitoringViewBase > renderView must be implemented');
   }
 

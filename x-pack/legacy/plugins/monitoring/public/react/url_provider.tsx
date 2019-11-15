@@ -67,12 +67,10 @@ export class LocationProvider extends React.Component<{}, State> {
 
   componentDidMount() {
     this.removeRisonState();
-    console.log('>> A');
     this.setStateParams(); 
     this.removeChangeEvent = history.listen(_ => {
       if (history.action !== 'REPLACE' && this.setCurrentLocation(history.location)) {
         this.setStateParams();
-        console.log('>> url_provider: history.change');
       }
     });
   }
@@ -83,7 +81,6 @@ export class LocationProvider extends React.Component<{}, State> {
     this.lastLocation = nextLocation;
     return changed;
   }
-
 
   componentWillUnmount() {
     this.removeChangeEvent && this.removeChangeEvent();
@@ -127,7 +124,7 @@ export class LocationProvider extends React.Component<{}, State> {
     }
 
     if (Object.keys(newState).length) {
-      this.setState(newState, () => console.log('...NEW-STATE > pathname:', history.location.pathname, ' ...search >', history.location.search));
+      this.setState(newState);
     }
   }
 
@@ -137,7 +134,6 @@ export class LocationProvider extends React.Component<{}, State> {
     const { pathname } = history.location;
     const historyItem = { pathname, search };
     (pushState) ? history.push(historyItem) : history.replace(historyItem);
-    this.setStateParams(); console.log('>> C');
   }
 
   private setTimefilterParams = (timefilterParams: TimefilterParams, pushState?: boolean) => {
@@ -147,7 +143,6 @@ export class LocationProvider extends React.Component<{}, State> {
   private setGlobalParams = (globalParams: GlobalParams, pushState?: boolean) => {
     this.setURLParams(globalParams, pushState);
   }
-
 
   render() {
     return (
