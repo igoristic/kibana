@@ -55,10 +55,11 @@
     ]
   },
   "include": [
-    "kibana.d.ts",
-    "src/**/*",
-    "typings/**/*",
-    "test_utils/**/*"
+    //"kibana.d.ts",
+    //"src/**/*",
+    "x-pack/legacy/plugins/monitoring/public/react/**/*",
+    //"typings/**/*",
+    //"test_utils/**/*"
   ],
   "exclude": [
     "src/**/__fixtures__/**/*"
